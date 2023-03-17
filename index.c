@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_LENGTH 10
+#define TABLE_LENGTH 231
+#define STRING_MAX_LENGTH 30
 
 /* Estrutura para armazenar uma palavra */
 typedef struct word {
@@ -23,7 +24,7 @@ int power(int x, int n) {
 /* Dado uma string, calcula o hash dessa string */
 unsigned int hash(char *str) {
   int i, k;
-  unsigned int count = 0;
+  unsigned long count = 0;
   k = 13;
   for(i = 0; str[i] != '\0'; i++) {
     count = count + (str[i] * power(k, i));
@@ -35,7 +36,7 @@ unsigned int hash(char *str) {
 word *newWord(char *data) {
   word *new = (word *) malloc(sizeof(word));
   if(new) {
-    new->data = (char *) malloc(strlen(data + 1));
+    new->data = (char *) malloc(strlen(data) + 1);
     if(new->data) {
       strcpy(new->data, data);
     }
@@ -56,8 +57,11 @@ void insertInList(word **head, char *data) {
       p = q;
       q = q->next;
     }
-    new->next = q;
-    p->next = new;
+    /* insere se a palavra não for repetida */
+    if(q == NULL || strcmp(data, q->data) != 0) {
+      new->next = q;
+      p->next = new;
+    }
   }
 }
 
@@ -78,15 +82,20 @@ void initTable(word *table[]) {
 }
 
 /* Recebe a tabela e uma chave e cria uma palavra nova e coloca na estrutura caso não aconteça colisões */
-void insertInTable(word *table[], char *data) {
-  int index = hash(data);
+void insert(word *table[], char *str1, char *str2) {
+  int index = hash(str1);
+  word *head;
   if(table[index] == NULL) {
-    word *head = newWord(data);
-    if(head) {
-      table[index] = head;
-    }
+    /* a str1 não existe na estrutura */
+    word *new = newWord(str1);
+    table[index] = new;
+    insertInList(&table[index], str2);
+  } else if(strcmp(table[index]->data, str1) == 0) {
+    /* a str1 já existe na estrutura */
+    head = table[index];
+    insertInList(&head, str2);
   } else {
-    insertInList(&table[index], data);
+    fprintf(stderr, "Erro: Nao foi possível inserir a palavra '%s' na estrutura devido a uma colisao.\n", str1);
   }
 }
 
@@ -134,15 +143,17 @@ int listLength(word *head) {
 /* Recebe a tabela de dispersão e salva seus dados em um arquivo */
 void saveTableInFile(word *table[]) {
   FILE *file;
-  file = fopen("words.csv","w");
+  file = fopen("words.txt","w");
   if(file) {
     int i;
+    /* Imprime a quantidade de linhas usadas da tabela. Será usado posteriormente para a leitura correta */
     fprintf(file, "%d\n", countNotEmptyRows(table));
     for(i = 0; i < TABLE_LENGTH; i++) {
       if(table[i]) {
         int list_length;
         word *temp = table[i];
         list_length = listLength(temp);
+        /* Imprime o tamanho da lista atual será usado posteriormente para o programa fazer a leitura correta */
         fprintf(file,"%d\n", list_length);
         while(temp) {
           fprintf(file, "%s\n", temp->data);
@@ -157,25 +168,34 @@ void saveTableInFile(word *table[]) {
 /* Carrega os dados de um arquivo e armazena em uma tabela de dispersão */
 void loadTableFromFile(word *table[]) {
   FILE *file;
-  file = fopen("words.csv", "r");
+  file = fopen("words.txt", "r");
   if(file) {
     int count_not_empty_rows, i;
     fscanf(file, "%d\n", &count_not_empty_rows);
-    for(i = 0; i < count_not_empty_rows; i++) {
+    for (i = 0; i < count_not_empty_rows; i++) {
       int list_length, j;
-      fscanf(file, "%d\n", &list_length);
+      fscanf(file,"%d\n", &list_length);
       for(j = 0; j < list_length; j++) {
-        char data[20];
-        fscanf(file, "%s\n", data);
-        insertInTable(table, data);
+        int index;
+        char str[STRING_MAX_LENGTH];
+        fscanf(file, "%s\n", str);
+        if(j == 0) {
+          /* É a cabeça da lista, a palavra chave */
+          word *head;
+          head = newWord(str);
+          index = hash(str);
+          table[index] = head;
+        } else {
+          insertInList(&table[index], str);
+        }
+
       }
     }
     fclose(file);
   } else {
-    fprintf(stderr, "Can't open the file 'words.csv'.\n");
+    fprintf(stderr, "Erro ao abriro o arquivo 'words.txt'.\n");
   }
 }
-
 /* Dada uma lista, libera a memoria de cada nó */
 void freeList(word *head) {
   word *current;
@@ -200,20 +220,25 @@ void freeTable(word *table[]) {
 
 int main() {
   word *table[TABLE_LENGTH];
-  char op[10], str1[20], str2[20];
+  char op[STRING_MAX_LENGTH], str1[STRING_MAX_LENGTH], str2[STRING_MAX_LENGTH];
   initTable(table);
   loadTableFromFile(table);
+
   do {
     scanf("%s", op);
     if(strcmp(op, "insere") == 0) {
       /* Operação de inserção */
       scanf(" %s %s", str1, str2);
-      printf("%s %s\n");
+      printf("%s %s\n", str1, str2);
+      insert(table, str1, str2);
+      insert(table, str2, str1);
+
     }
     if(strcmp(op, "busca") == 0) {
       /* Operação de busca */
     }
   } while(strcmp(op ,"fim") != 0);
+  saveTableInFile(table);
   freeTable(table);
   return 0;
 }
