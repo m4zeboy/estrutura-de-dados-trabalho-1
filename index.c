@@ -65,6 +65,19 @@ void insertInList(word **head, char *data) {
   }
 }
 
+void removeFromList(word *head, char *str) {
+  word *p, *q;
+  p = head;
+  q = head->next;
+  while(q && strcmp(q->data, str) != 0) {
+    p = q;
+    q = q->next;
+  }
+  p->next = q->next;
+  free(q->data);
+  free(q);
+}
+
 /* Recebe a cabeça de uma lista e imprime na tela seus dados */
 void showList(word *head) {
   while(head != NULL) {
@@ -218,24 +231,41 @@ void freeTable(word *table[]) {
   }
 }
 
+/* Recebe uma palavra e verifica se ela se encontra na estrutura, se sim mostra seus sinonimos um em cada linha */
+void search(word *table[], char *str) {
+    int index;
+    index = hash(str);
+    if(table[index] != NULL && strcmp(str, table[index]->data) == 0) {
+      word *iterator = table[index]->next;
+      while(iterator) {
+        printf("%s\n", iterator->data);
+        iterator = iterator->next;
+      }
+    } else {
+      printf("hein?\n");
+    }
+}
+
 int main() {
   word *table[TABLE_LENGTH];
-  char op[STRING_MAX_LENGTH], str1[STRING_MAX_LENGTH], str2[STRING_MAX_LENGTH];
+  char op[STRING_MAX_LENGTH], str1[STRING_MAX_LENGTH] = "", str2[STRING_MAX_LENGTH] = "";
   initTable(table);
   loadTableFromFile(table);
-
   do {
     scanf("%s", op);
     if(strcmp(op, "insere") == 0) {
       /* Operação de inserção */
       scanf(" %s %s", str1, str2);
-      printf("%s %s\n", str1, str2);
       insert(table, str1, str2);
       insert(table, str2, str1);
-
     }
     if(strcmp(op, "busca") == 0) {
       /* Operação de busca */
+      scanf("%s", str1);
+      search(table, str1);
+    }
+    if (strcmp(op, "remove") == 0) {
+
     }
   } while(strcmp(op ,"fim") != 0);
   saveTableInFile(table);

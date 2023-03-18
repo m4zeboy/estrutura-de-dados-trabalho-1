@@ -14,12 +14,14 @@ Esse código é usado para inserir uma palavra na lista, por causa desse erro pe
 
 Também enrolei-me para liberar a memória de uma lista, eu esquecia de salvar o próximo nó da lista, e quando eu tentava reatribuir o nó atual ele não funcionava por que eu liberei ele, logo o programa não ia conseguir acessar para fazer a reatribuição.
 
+Tive dificuldade em como tratar a função remove, quando recebe uma entrada e quando recebe duas entradas, resolvi pesquisando na internet, creditos: ChatGPT;
+
 - [x]  função de insere
     - [x] funçao hash
-    - [x]criar nó
+    - [x] criar nó 
     - [x] inserir no na lista
     - [x] inserir na tabela
 - [x] salvar dados em arquivo
 - [x] carregar dados do arquivo
-- [ ] função de busca
+- [x] função de busca
 - [ ] função de remoção
