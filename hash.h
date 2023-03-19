@@ -74,6 +74,7 @@ void insertInList(word **head, char *data) {
   }
 }
 
+/* Dado uma lista e uma palavra str, remove a palavra str da lista */
 void removeFromList(word *head, char *str) {
   word *p, *q;
   p = head;
@@ -87,11 +88,25 @@ void removeFromList(word *head, char *str) {
   free(q);
 }
 
-/* Recebe a cabeça de uma lista e imprime na tela seus dados */
-void showList(word *head) {
-  while(head != NULL) {
-    printf("%s - %x -> ", head->data, head->next);
+/* Recebe a cabeça de uma lista e calcula seu tamanho */
+int listLength(word *head) {
+  int count = 0;
+  while(head) {
+    count++;
     head = head->next;
+  }
+  return count;
+}
+
+/* Dada uma lista, libera a memoria de cada nó */
+void freeList(word *head) {
+  word *current;
+  current = head;
+  while(current) {
+    word *next = current->next;
+    free(current->data);
+    free(current);
+    current = next;
   }
 }
 
@@ -129,35 +144,6 @@ int countNotEmptyRows(word *table[]) {
     if(table[i] != NULL) {
       count++;
     }
-  }
-  return count;
-}
-
-/* Imprime a tabela */
-void showTable(word *table[]) {
-  int i;
-  word *current;
-  for(i = 0; i < TABLE_LENGTH; i++) {
-    if(table[i] == NULL) {
-      printf("NULL");
-    } else {
-      printf("head: %s -> ", table[i]->data);
-      current = table[i]->next;
-      while(current) {
-        printf("%s -> ",current->data);
-        current = current->next;
-      }
-    }
-    printf("\n");
-  }
-}
-
-/* Recebe a cabeça de uma lista e calcula seu tamanho */
-int listLength(word *head) {
-  int count = 0;
-  while(head) {
-    count++;
-    head = head->next;
   }
   return count;
 }
@@ -218,17 +204,6 @@ void loadTableFromFile(word *table[]) {
     fprintf(stderr, "Erro ao abriro o arquivo 'words.txt'.\n");
   }
 }
-/* Dada uma lista, libera a memoria de cada nó */
-void freeList(word *head) {
-  word *current;
-  current = head;
-  while(current) {
-    word *next = current->next;
-    free(current->data);
-    free(current);
-    current = next;
-  }
-}
 
 /* Percorre as linhas da tabela e se estiver vazia, libera a memória da lista que está alocada na respectiva posição */
 void freeTable(word *table[]) {
@@ -255,7 +230,10 @@ void search(word *table[], char *str) {
     }
 }
 
-/* Dado uma palavra str exclui ela e sua lista de sinônimos da estrutura, mas não exclui a palavra str como sinonimo em outras listas */
+/* 
+  Dado uma palavra str exclui ela e sua lista de sinônimos da estrutura, 
+  mas não exclui a palavra str como sinonimo em outras listas 
+*/
 void removeFromTable(word *table[], char *str) {
   int index;
   word *head;
