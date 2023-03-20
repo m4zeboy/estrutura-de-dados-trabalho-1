@@ -14,8 +14,8 @@
 #include "hash.h"
 
 int main() {
-  word *table[TABLE_LENGTH];
-  char input[200], op[STRING_MAX_LENGTH], str1[STRING_MAX_LENGTH], str2[STRING_MAX_LENGTH];             
+  word *table[TABLE_SIZE];
+  char input[200], op[STRING_SIZE], str1[STRING_SIZE], str2[STRING_SIZE];             
   initTable(table);
   loadTableFromFile(table);
   do {
@@ -37,6 +37,12 @@ int main() {
         /* Remover str2 da lista de sinonimos de str1, e remover str1 da lista de sinonimos de str2 */
         int index = hash(str1);
         removeFromList(table[index], str2);
+        /* Verifica se a palavra não tem mais sinonimos associados a ela para excluir da tabela */
+        if(table[index]->next == NULL) {
+          word *trash = table[index];
+          table[index] = NULL;
+          free(trash);
+        }
       } 
     } else if(strcmp(op, "fim") == 0) {
       break;

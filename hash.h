@@ -4,7 +4,7 @@
 *   RGA 2022.0743.004-6                               *
 *   Implementação 1                                   *
 *   Disciplina: Estruturas de Dados e Programacão I   *
-*   Professor: Ronaldo Fiorilo *                      *
+*   Professor: Ronaldo Fiorilo                        *
 *                                                     *
 *******************************************************/
 
@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_LENGTH 577
-#define STRING_MAX_LENGTH 30
+#define TABLE_SIZE 577
+#define STRING_SIZE 30
 
 /* Estrutura para armazenar uma palavra */
 typedef struct word {
@@ -34,12 +34,12 @@ int power(int x, int n) {
 /* Dado uma string, calcula o hash dessa string */
 unsigned int hash(char *str) {
   int i, k;
-  unsigned long count = 0;
+  unsigned long hash_value = 0;
   k = 13;
   for(i = 0; str[i] != '\0'; i++) {
-    count = count + (str[i] * power(k, i));
+    hash_value = hash_value + (str[i] * power(k, i));
   }
-  return count % TABLE_LENGTH;
+  return hash_value % TABLE_SIZE;
 }
 
 /* Aloca memória para a criação de uma palavra */
@@ -98,6 +98,11 @@ int listLength(word *head) {
   return count;
 }
 
+void freeWord(word *word) {
+  free(word->data);
+  free(word);
+}
+
 /* Dada uma lista, libera a memoria de cada nó */
 void freeList(word *head) {
   word *current;
@@ -113,7 +118,7 @@ void freeList(word *head) {
 /* Inicializa todas as posições da tabela com o ponteiro NULL */
 void initTable(word *table[]) {
   int i;
-  for (i = 0; i < TABLE_LENGTH; i++){
+  for (i = 0; i < TABLE_SIZE; i++){
     table[i] = NULL;
   }
 }
@@ -140,7 +145,7 @@ void insert(word *table[], char *str1, char *str2) {
 int countNotEmptyRows(word *table[]) {
   int count, i;
   count = 0;
-  for(i = 0; i < TABLE_LENGTH; i++) {
+  for(i = 0; i < TABLE_SIZE; i++) {
     if(table[i] != NULL) {
       count++;
     }
@@ -156,7 +161,7 @@ void saveTableInFile(word *table[]) {
     int i;
     /* Imprime a quantidade de linhas usadas da tabela. Será usado posteriormente para a leitura correta */
     fprintf(file, "%d\n", countNotEmptyRows(table));
-    for(i = 0; i < TABLE_LENGTH; i++) {
+    for(i = 0; i < TABLE_SIZE; i++) {
       if(table[i]) {
         int list_length;
         word *temp = table[i];
@@ -185,7 +190,7 @@ void loadTableFromFile(word *table[]) {
       fscanf(file,"%d\n", &list_length);
       for(j = 0; j < list_length; j++) {
         int index;
-        char str[STRING_MAX_LENGTH];
+        char str[STRING_SIZE];
         fscanf(file, "%s\n", str);
         if(j == 0) {
           /* É a cabeça da lista, a palavra chave */
@@ -208,7 +213,7 @@ void loadTableFromFile(word *table[]) {
 /* Percorre as linhas da tabela e se estiver vazia, libera a memória da lista que está alocada na respectiva posição */
 void freeTable(word *table[]) {
   int i;
-  for(i = 0; i < TABLE_LENGTH; i++) {
+  for(i = 0; i < TABLE_SIZE; i++) {
     if(table[i] != NULL) {
       freeList(table[i]);
     }
