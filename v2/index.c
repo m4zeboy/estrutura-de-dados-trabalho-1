@@ -48,29 +48,82 @@ Node *createNode(string data) {
   return new;
 }
 
-void insertInNodeList(Node **list, string word) {
-  Node *new;
-  new = createNode(word);
-  new->next = (*list)->next;
-  (*list)->next = new;
+unsigned int nodeLength(Node *list) {
+  if(list == NULL) {
+    return 0;
+  } else {
+    return 1 + nodeLength(list->next);
+  }
 }
 
-bool insertInTable(Node *table[], string word) {
-  unsigned int base_address = hash(word);
-  Node *new = createNode(word);
+Synonym *createSynonym(string data) {
+  Synonym *new;
+  new = (Synonym *) malloc(sizeof(Synonym));
   if(new == NULL) {
-    fprintf(stderr, "Can't Alocate memory for Node with word '%s'\n", word);
+    return NULL;
+  }
+  new->data = (string) malloc(strlen(data) + 1);
+  if(new->data == NULL) {
+    return NULL;
+  }
+  strcpy(new->data, data);
+  new->next = NULL;
+  return new;
+}
+
+
+unsigned int synonymLength(Synonym *list) {
+  if(list == NULL) {
+    return 0;
+  } else {
+    return 1 + synonymLength(list->next);
+  }
+}
+
+bool insertSynonymInList(Synonym **list, string synonym) {
+  Synonym *new, *previous, *current;
+  previous = NULL;
+  current = *list;
+  while(current && strncmp(synonym, current->data, strlen(synonym)) > 0) {
+    previous = current;
+    current = current->next;
+  }
+  if(current && strncmp(synonym, current->data, strlen(synonym)) == 0) {
     return false;
   }
-  if(table[base_address] == NULL) {
-    table[base_address] = new;
+  new = createSynonym(synonym);
+  new->next = current;
+  if(previous == NULL) {
+    *list = new;
+  } else {
+    previous->next = new;
+  } 
+  return true;
+}
+
+bool insertInTable(Node *table[], string word, string synonym) {
+  int baseAddress;
+  baseAddress = hash(word);
+  if(table[baseAddress] == NULL) {
+    Node *new;
+    new = createNode(word);
+    table[baseAddress] = new;
+    insertSynonymInList(&(table[baseAddress]->list), synonym);
     return true;
-  } else if(strcmp(table[base_address]->word, word) != 0) {
-    Node *list;
-    list = table[base_address];
-    insertInNodeList(&list, word);
+  } else {
+    Node *iterator;
+    iterator = table[baseAddress];
+    while(iterator->next && strcmp(iterator->word, word) != 0) {
+      iterator = iterator->next;
+    }
+    insertSynonymInList(&(iterator->list), synonym);
+    if(strcmp(iterator->word, word) != 0) {
+      Node *new;
+      new = createNode(word);
+      iterator->next = new;
+    }
+    return true;
   }
-  return false;
 }
 
 void initTable(Node *table[]) {
@@ -80,9 +133,27 @@ void initTable(Node *table[]) {
   }
 }
 
-void showList(Node *list) {
-  if(list) {
-    printf(" %x - %s ->", list->list, list->word);
+unsigned int countUsedRows(Node *table[]) {
+  unsigned int i, count;
+  count = 0;
+  for(i = 0; i < SIZE; i++) {
+    if(table[i] != NULL) {
+      count++;
+    }
+  }
+  return count;
+}
+
+void showSynonymList(Synonym *list) {
+  while(list) {
+    printf("%s -> ", list->data);
+    list = list->next;
+  }
+}
+
+void showNodeList(Node *list) {
+  while(list) {
+    printf("%s -> ", list->word);
     list = list->next;
   }
 }
@@ -93,20 +164,55 @@ void showTable(Node *table[]) {
     printf("| %02d |", i);
     if(table[i] == NULL) printf(" NULL |\n");
     else {
-      showList(table[i]);
+      showNodeList(table[i]);
       printf("\n");
     }
+  }
+}
+
+void save(Node *table[]) {
+  FILE *file;
+  file = fopen("data.data", "w");
+  if(file) {
+    unsigned int usedRows, i;
+    usedRows = countUsedRows(table);
+    fprintf(file,"%d\n", usedRows);
+    for(i = 0; i < SIZE; i++) {
+      if(table[i] != NULL) {
+        unsigned int nodes, j;
+        Node *iterator = table[i];
+        nodes = nodeLength(table[i]);
+        fprintf(file,"%d\n", nodes);
+        while(iterator) {
+        Synonym *s;
+        unsigned int synonyms;
+        s = iterator->list;
+        synonyms = synonymLength(s);
+        fprintf(file, "%s\n", iterator->word);
+        fprintf(file, "%d\n", synonyms);
+        while(s) {
+          fprintf(file, "%s\n", s->data);
+          s = s->next;
+        }
+        iterator = iterator->next;
+      }
+      }
+    }
+    fclose(file);
   }
 }
 
 int main(void) {
   Node *table[SIZE];
   initTable(table);
-  insertInTable(table, "Moises");
-  insertInTable(table, "Gabriel");
-  insertInTable(table, "Vilmar");
-  insertInTable(table, "Maria");
-  insertInTable(table, "Antonio");
-  printf("%s\n",table[6]->next->word);
+  insertInTable(table,"carro", "automovel");
+  insertInTable(table,"carro", "bmw");
+  insertInTable(table,"bmw", "carro");
+  insertInTable(table, "automovel", "carro");
+  showTable(table);
+
+  showSynonymList(table[hash("automovel")]->list);
+
+  save(table);
   return 0;
 }
