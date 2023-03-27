@@ -71,7 +71,6 @@ Synonym *createSynonym(string data) {
   return new;
 }
 
-
 unsigned int synonymLength(Synonym *list) {
   if(list == NULL) {
     return 0;
@@ -170,6 +169,38 @@ void showTable(Node *table[]) {
   }
 }
 
+void saveSynonym(FILE *stream, Synonym *s) {
+  fprintf(stream, "%s\n", s->data);
+}
+
+void saveSynonymList(FILE *stream, Synonym *list) {
+  while(list) {
+    saveSynonym(stream, list);
+    list = list->next;
+  }
+}
+
+void saveNode(FILE *stream, Node *n) {
+  Synonym *s;
+  unsigned int synonyms;
+  s = n->list;
+  synonyms = synonymLength(s);
+  fprintf(stream, "%s\n", n->word);
+  fprintf(stream, "%d\n", synonyms);
+  saveSynonymList(stream, s);
+}
+
+void saveNodeList(FILE *stream, Node *n) {
+  unsigned int nodes;
+  Node *iterator = n;
+  nodes = nodeLength(n);
+  fprintf(stream,"%d\n", nodes);
+  while(iterator) {
+    saveNode(stream, iterator);
+    iterator = iterator->next;
+  }
+}
+
 void save(Node *table[]) {
   FILE *file;
   file = fopen("data.data", "w");
@@ -179,39 +210,67 @@ void save(Node *table[]) {
     fprintf(file,"%d\n", usedRows);
     for(i = 0; i < SIZE; i++) {
       if(table[i] != NULL) {
-        unsigned int nodes, j;
-        Node *iterator = table[i];
-        nodes = nodeLength(table[i]);
-        fprintf(file,"%d\n", nodes);
-        while(iterator) {
-        Synonym *s;
-        unsigned int synonyms;
-        s = iterator->list;
-        synonyms = synonymLength(s);
-        fprintf(file, "%s\n", iterator->word);
-        fprintf(file, "%d\n", synonyms);
-        while(s) {
-          fprintf(file, "%s\n", s->data);
-          s = s->next;
-        }
-        iterator = iterator->next;
-      }
+        saveNodeList(file, table[i]);
       }
     }
     fclose(file);
   }
 }
 
+void readNodeList(FILE *stream, Node *table[]) {
+  int baseAddress, nodes, i;
+  char word[30];
+  Node *list, *node;
+  list = NULL;
+  fscanf(stream, "%d\n", &nodes);
+  for(i = 1; i <= nodes; i++) {
+    fscanf(stream, "%s\n", word);
+    node = createNode(word);
+    if(i == 1) {
+      baseAddress = hash(word);
+      list = node;
+    } else {
+      list->next = node;
+    }
+    table[baseAddress] = list;
+  }
+
+}
+
+void readRows(FILE *stream, Node *table[]) {
+  int usedRows, i;
+  fscanf(stream, "%d\n", &usedRows);
+  for(i = 0; i < usedRows; i++) {
+    readNodeList(stream, table);
+  }
+}
+
+void load(Node *table[]) {
+  FILE *file;
+  file = fopen("data.data", "r");
+  if(file) {
+    readRows(file, table);
+  }
+}
+
 int main(void) {
   Node *table[SIZE];
   initTable(table);
+
   insertInTable(table,"carro", "automovel");
+  insertInTable(table, "automovel", "carro");
   insertInTable(table,"carro", "bmw");
   insertInTable(table,"bmw", "carro");
-  insertInTable(table, "automovel", "carro");
+
   showTable(table);
 
+  showSynonymList(table[hash("carro")]->list);
+  printf("\n");
   showSynonymList(table[hash("automovel")]->list);
+  printf("\n");
+  showSynonymList(table[hash("bmw")]->list);
+  printf("\n");
+
 
   save(table);
   return 0;
