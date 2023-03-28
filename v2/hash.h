@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define string char *
-#define SIZE 10
+#define SIZE 177
 
 typedef struct synonym {
   string data;
@@ -100,6 +100,13 @@ bool insertSynonymInList(Synonym **list, string synonym) {
   return true;
 }
 
+void initTable(Node *table[]) {
+  int i;
+  for(i = 0; i < SIZE; i++) {
+    table[i] = NULL;
+  }
+}
+
 bool insertInTable(Node *table[], string word, string synonym) {
   int baseAddress;
   baseAddress = hash(word);
@@ -125,11 +132,45 @@ bool insertInTable(Node *table[], string word, string synonym) {
   }
 }
 
-void initTable(Node *table[]) {
-  int i;
-  for(i = 0; i < SIZE; i++) {
-    table[i] = NULL;
+void showSynonymList(Synonym *list) {
+  while(list) {
+    printf("%s\n", list->data);
+    list = list->next;
   }
+}
+
+void search(Node *table[], string word) {
+  int baseAddress;
+  Node *iterator;
+  baseAddress = hash(word);
+  iterator = table[baseAddress];
+  while(iterator && strcmp(word, table[baseAddress]->word) != 0) {
+    iterator = iterator->next;
+  }
+  if(iterator == NULL) {
+    printf("hein?\n");
+  } else {
+    printf("%s\n", iterator->word);
+    showSynonymList(iterator->list);
+  }
+}
+
+void deleteNode(Node **list, string word) {
+  Node *previous, *current, *trash;
+  previous = NULL;
+  current = *list;
+  while(current && strcmp(word, current->word) != 0) {
+    previous = current;
+    current = current->next;
+  }
+  trash = current;
+  if(previous == NULL) {
+    *list = current->next;
+  } else {
+    previous->next = current->next;
+  }
+  free(trash->word);
+  free(trash);
 }
 
 unsigned int countUsedRows(Node *table[]) {
@@ -141,14 +182,6 @@ unsigned int countUsedRows(Node *table[]) {
     }
   }
   return count;
-}
-
-void showSynonymList(Synonym *list) {
-  while(list) {
-    printf("%s -> ", list->data);
-    list = list->next;
-  }
-  printf("\n");
 }
 
 void showNodeList(Node *list) {
